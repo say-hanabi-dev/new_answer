@@ -19,10 +19,23 @@ if (isset($_GET["page"])) $page = (int)$_GET["page"];
             <th>回答内容</th>
             <th>回答者IP</th>
             <th>回答时间</th>
+            <th>回答者UID</th>
         </tr>
         <?php
-        foreach (DB::fetch_all("SELECT `id`,`content`,`answer_time`,`ip` FROM `pre_hanabi_answer` WHERE `status` = 1 ORDER BY `id` DESC LIMIT %d,%d", array($page, $page + 10)) as $answer) {
-            echo '<tr><td width="80%">' . str_replace(PHP_EOL, '<br />', $answer["content"]) . "</td><td>" . $answer["ip"] . "</td><td>" . $answer["answer_time"] . '</td></tr>';
+        foreach (DB::fetch_all("SELECT
+	pre_hanabi_answer.content, 
+	pre_hanabi_answer.ip, 
+	pre_common_invite.fuid, 
+	pre_hanabi_answer.answer_time
+FROM
+	pre_hanabi_answer
+	LEFT JOIN
+	pre_common_invite
+	ON 
+		pre_hanabi_answer.invitecode = pre_common_invite.`code`
+WHERE
+	pre_hanabi_answer.`status` = 1 ORDER BY pre_hanabi_answer.`id` DESC LIMIT %d,%d", array($page, $page + 10)) as $answer) {
+            echo '<tr><td width="80%">' . str_replace(PHP_EOL, '<br />', $answer["content"]) . "</td><td>" . $answer["ip"] . "</td><td>" . $answer["answer_time"] . '</td><td>' . $answer["fuid"] . '</td></tr>';
         }
         ?>
     </table>
