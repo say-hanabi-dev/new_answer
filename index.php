@@ -1,15 +1,16 @@
 <?php
 session_start();
 header('Content-Type:text/html;charset=utf-8');
-function add($content){
+function add($content, $pmail){
   try{
   $token = $_SESSION['token'];
   $pdo = createpdo();
-  $sql = 'set names utf8;INSERT INTO `pre_hanabi_answer`(`content`, `ip`, `token`) VALUES (?, ?, ?)';
+  $sql = 'set names utf8;INSERT INTO `pre_hanabi_answer`(`content`, `mail`, `ip`, `token`) VALUES (?, ?, ?, ?)';
   $insert = $pdo->prepare($sql);
   $insert->bindParam(1, $content);
-  $insert->bindParam(2, $_SERVER['HTTP_CF_CONNECTING_IP']);
-  $insert->bindParam(3, $token);
+  $insert->bindParam(2, $pmail);
+  $insert->bindParam(3, $_SERVER['HTTP_CF_CONNECTING_IP']);
+  $insert->bindParam(4, $token);
   
   if(!$insert->execute()){
       $token = "";
@@ -94,21 +95,28 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
 <form action="?action=commit" method="post">
 <input type="hidden" name="token" value="<?php echo $_SESSION["token"]; ?>">
 <p><textarea rows="20" cols="100" name="answer"></textarea></p>
+<p>请输入提醒邮箱📫（可选）：<input type="text" name="mail" /></p>
 <input type="submit" />
 <?php 
 } else {
     switch($_GET["action"]){
         case "commit":
             if($_SERVER['REQUEST_METHOD'] == "POST"){
-                if(!isset($_SESSION["token"]) || $_SESSION["token"] != $_POST["token"]){
-                    die("非法请求！");
-                }
+                if(!isset($_SESSION["token"]) || $_SESSION["token"] != $_POST["token"]) die("非法请求！");
+                if(!isset($_POST['answer'])) die("请求错误");
                 $answer = htmlspecialchars($_POST['answer']);
                 if(strlen($answer) > 10 && strlen($answer) < 262140) {
+                    $pmail = NULL;
+                    if(isset($_POST['mail'])){
+                        preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$/", $_POST['mail'], $usermail);
+                        if($usermail){
+                            $pmail = $usermail[0];
+                        }
+                    }
                     $pdo = createpdo();
                     $sql = "SELECT count(id) count from `pre_hanabi_answer` where ip = '".addslashes($_SERVER['HTTP_CF_CONNECTING_IP'])."'";
                     if($pdo->query($sql)->fetch(PDO::FETCH_ASSOC)['count'] < 10){
-                        echo "提交成功！,请过一段时间使用“".add($answer)."”查看成绩与邀请码<br />注意：请妥善保存此Token。";
+                        echo "提交成功！请过一段时间使用“".add($answer, $pmail)."”查看成绩与邀请码<br />注意：请妥善保存此Token。";
                     }else{
                         echo "该IP提交超出次数限制";
                     }
@@ -133,7 +141,7 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
                     $sql = "SELECT `id`, `status`, `invitecode` from `pre_hanabi_answer` where token = '".$token[0]."'";
                     $result = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
                     if($result){
-                        echo "当前状态：".array(0=>"投票中", 1=>"已通过", 2=>"未通过")[$result["status"]];
+                        echo "当前状态：".array(0=>"投票中，请稍候再进行查询", 1=>"已通过", 2=>"未通过，请尝试重新回答")[$result["status"]];
                         if($result["status"] == 1) {
                             if($result["invitecode"]){
                                 echo "，邀请码为：".$result["invitecode"]."，当前Token已查询。";
@@ -141,8 +149,6 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
                                 echo "，邀请码为：".invite($result["id"])."，请尽快使用。";
                             }
                         }
-                        else if($result["status"] == 0) echo "，请稍候再进行查询";
-                        else if($result["status"] == 2) echo "，请尝试重新回答";
                     }else{
                         echo "没有找到该Token";
                     }
