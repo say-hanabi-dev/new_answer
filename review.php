@@ -6,36 +6,6 @@ require '../source/class/class_core.php';
 C::app()->init();
 if (!in_array($_G["groupid"], array(1, 2, 3, 196, 197))) die("您无权访问此页");
 
-function generate_invite_code() {
-  $code_length = 8;
-  $characters = [
-    'a', 'b', 'c', 'd', 'e', 'f', 'j', 'h', 'i', 'j', 'k',
-    'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
-    'y', 'z', '2', '3', '4', '5', '6', '7', '8', '9'
-  ];
-  $code = '';
-  for ($i = 0; $i < $code_length; $i++) {
-    $index = mt_rand(0, sizeof($characters) - 1);
-    $code .= $characters[$index];
-  }
-  return $code;
-}
-
-function get_invite_code(){
-    $inviteuid = '39900';
-    $inviteip = $_SERVER['HTTP_CF_CONNECTING_IP'];
-    $invitecode = generate_invite_code();
-    $validperid = 1 * 24 * 60 * 60;
-    $currtime = time();
-    $expiretime = $currtime + $validperid;
-    try{
-        DB::query("INSERT INTO `pre_common_invite`(`uid`, `code`, `inviteip`, `dateline`, `endtime`) VALUES (%d, %s, %s, %d, %d)", array($inviteuid, $invitecode, $inviteip, $currtime, $expiretime));
-        //返回邀请码
-        return $invitecode;
-    } catch (Exception $e) {
-        echo '操作失败';
-    }
-}
 ?>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
@@ -60,7 +30,7 @@ function get_invite_code(){
                 $score_sum = DB::fetch_first("SELECT SUM(`score`) AS score_sum FROM pre_hanabi_answer_vote where `aid` = %d", array($_GET['aid']))["score_sum"];
                 if($score_sum >= constant("PASSSCORE")){
                     // 分数达标
-                    DB::query("UPDATE pre_hanabi_answer SET `status` = 1, invitecode = %s where `id` = %d", array(get_invite_code(), $_GET['aid']));
+                    DB::query("UPDATE pre_hanabi_answer SET `status` = 1 where `id` = %d", array($_GET['aid']));
                 }else if($score_sum <= constant("REJECTSCORE")){
                     // 分数过低
                     DB::query("UPDATE pre_hanabi_answer SET `status` = 2 where `id` = %d", array($_GET['aid']));
