@@ -32,6 +32,53 @@ function createpdo() {
   $db = new PDO($dsn, $user, $pass, array(PDO::ATTR_PERSISTENT => true));
   return $db;
 }
+
+function invite($id) {
+  $inviteuid = '39900';
+  $inviteip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+  $invitecode = generate_invite_code();
+  $validperid = 1 * 60 * 60;
+  $currtime = time();
+  $expiretime = $currtime + $validperid;
+
+  $pdo = createpdo();
+
+  $sql = 'INSERT INTO `pre_common_invite`(`uid`, `code`, `inviteip`, `dateline`, `endtime`) VALUES (?, ?, ?, ?, ?)';
+  $insert = $pdo->prepare($sql);
+  $insert->bindParam(1, $inviteuid);
+  $insert->bindParam(2, $invitecode);
+  $insert->bindParam(3, $inviteip);
+  $insert->bindParam(4, $currtime);
+  $insert->bindParam(5, $expiretime);
+  $insert->execute();
+  
+  $sql = 'UPDATE `pre_hanabi_answer` SET `invitecode` = ? WHERE `id` = ?';
+  $update = $pdo->prepare($sql);
+  $update->bindParam(1, $invitecode);
+  $update->bindParam(2, $id);
+  $update->execute();
+
+  $pdo = null;
+
+  return $invitecode;
+  
+}
+
+function generate_invite_code() {
+  $code_length = 8;
+  $characters = [
+    'a', 'b', 'c', 'd', 'e', 'f', 'j', 'h', 'i', 'j', 'k',
+    'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+    'y', 'z', '2', '3', '4', '5', '6', '7', '8', '9'
+  ];
+  $code = '';
+  for ($i = 0; $i < $code_length; $i++) {
+    $index = mt_rand(0, sizeof($characters) - 1);
+    $code .= $characters[$index];
+  }
+  return $code;
+}
+
 ?>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
@@ -83,11 +130,17 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
             if(isset($_POST['token'])){
                 preg_match('/[a-f0-9]{32}/i', $_POST['token'], $token);
                 if($token){
-                    $sql = "SELECT `status`, `invitecode` from `pre_hanabi_answer` where token = '".$token[0]."'";
+                    $sql = "SELECT `id`, `status`, `invitecode` from `pre_hanabi_answer` where token = '".$token[0]."'";
                     $result = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
                     if($result){
                         echo "当前状态：".array(0=>"投票中", 1=>"已通过", 2=>"未通过")[$result["status"]];
-                        if($result["status"] == 1) echo "，邀请码为：".$result["invitecode"];
+                        if($result["status"] == 1) {
+                            if($result["invitecode"]){
+                                echo "，邀请码为：".$result["invitecode"]."，当前Token已查询。";
+                            }else{
+                                echo "，邀请码为：".invite($result["id"])."，请尽快使用。";
+                            }
+                        }
                         else if($result["status"] == 0) echo "，请稍候再进行查询";
                         else if($result["status"] == 2) echo "，请尝试重新回答";
                     }else{
