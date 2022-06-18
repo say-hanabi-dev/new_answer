@@ -1,9 +1,12 @@
 <?php
+
+if (!defined('IN_DISCUZ')) {
+    exit('Access Denied');
+}
+
 define('CURSCRIPT', 'review');
 define('PASSSCORE', 2);         //通过分数
 define('REJECTSCORE', -3);      //不通过分数
-require '../source/class/class_core.php';
-C::app()->init();
 if (!in_array($_G["groupid"], array(1, 2, 3, 196, 197))) die("您无权访问此页");
 function mailsend($umail, $token){
     preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$/", $umail, $usermail);
@@ -16,7 +19,7 @@ function mailsend($umail, $token){
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>花火考场 - 阅卷中心</title>
 <img style="align:left" width="270px" src="/static/image/common/sayhanabi_header.png"> <b>
-    <font size="6">阅卷中心</font> | <a href="index.php">花火考场</a> | <a href="show.php">作文鉴赏</a>
+    <font size="6">阅卷中心</font> | <a href="/answer/">花火考场</a> | <a href="/hanabianswer-show.html">作文鉴赏</a>
 </b> | 欢迎，<?php echo $_G["username"]; ?>
 <hr />
 <div style="text-align:center">

@@ -86,7 +86,7 @@ function generate_invite_code() {
 
 <title>花火考场</title>
 <img style="align:left" width="270px" src="/static/image/common/sayhanabi_header.png"> 
-<b><a href="?"><font size="6">花火考场</font></a> | <a href="?action=query">成绩查询</a> | <a href="review.php">阅卷中心</a></b>
+<b><a href="?"><font size="6">花火考场</font></a> | <a href="?action=query">成绩查询</a> | <a href="/hanabianswer-review.html">阅卷中心</a></b>
 <hr /><div style="text-align:center">
 <?php if(!isset($_GET["action"])){ 
 $_SESSION["token"] = md5(uniqid(mt_rand(), true));
@@ -104,11 +104,11 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
             if($_SERVER['REQUEST_METHOD'] == "POST"){
                 if(!isset($_SESSION["token"]) || $_SESSION["token"] != $_POST["token"]) die("非法请求！");
                 if(!isset($_POST['answer'])) die("请求错误");
-                $answer = htmlspecialchars($_POST['answer']);
+                $answer = htmlspecialchars((string)$_POST['answer']);
                 if(strlen($answer) > 10 && strlen($answer) < 262140) {
                     $pmail = NULL;
                     if(isset($_POST['mail'])){
-                        preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$/", $_POST['mail'], $usermail);
+                        preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$/", (string)$_POST['mail'], $usermail);
                         if($usermail){
                             $pmail = $usermail[0];
                         }
@@ -136,7 +136,7 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
         case "doquery":
             $pdo = createpdo();
             if(isset($_POST['token'])){
-                preg_match('/[a-f0-9]{32}/i', $_POST['token'], $token);
+                preg_match('/[a-f0-9]{32}/i', (string)$_POST['token'], $token);
                 if($token){
                     $sql = "SELECT `id`, `status`, `invitecode` from `pre_hanabi_answer` where token = '".$token[0]."'";
                     $result = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
@@ -144,7 +144,7 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
                         echo "当前状态：".array(0=>"投票中，请稍候再进行查询", 1=>"已通过", 2=>"未通过，请尝试重新回答")[$result["status"]];
                         if($result["status"] == 1) {
                             if($result["invitecode"]){
-                                echo "，邀请码为：".$result["invitecode"]."，当前Token已查询。";
+                                echo "，邀请码为：".$result["invitecode"]."，当前Token已查询（邀请码可能已经过期）。";
                             }else{
                                 echo "，邀请码为：".invite($result["id"])."，请尽快使用。";
                             }

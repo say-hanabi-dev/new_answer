@@ -1,7 +1,9 @@
 <?php
-define('CURSCRIPT', 'show');
-require '../source/class/class_core.php';
-C::app()->init();
+
+if (!defined('IN_DISCUZ')) {
+    exit('Access Denied');
+}
+
 if (!in_array($_G["groupid"], array(1, 2, 3, 196, 197))) die("您无权访问此页");
 $page = 0;
 if (isset($_GET["page"])) $page = (int)$_GET["page"];
@@ -10,7 +12,7 @@ if (isset($_GET["page"])) $page = (int)$_GET["page"];
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>花火考场 - 作文鉴赏</title>
 <img style="align:left" width="270px" src="/static/image/common/sayhanabi_header.png"> <b>
-    <font size="6">作文鉴赏</font> | <a href="review.php">阅卷中心</a>
+    <font size="6">作文鉴赏</font> | <a href="/hanabianswer-review.html">阅卷中心</a>
 </b> | 欢迎，<?php echo $_G["username"]; ?>
 <hr />
 <div style="text-align:center">
