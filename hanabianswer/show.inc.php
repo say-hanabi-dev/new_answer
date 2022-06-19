@@ -36,7 +36,7 @@ FROM
 	ON 
 		pre_hanabi_answer.invitecode = pre_common_invite.`code`
 WHERE
-	pre_hanabi_answer.`status` = 1 ORDER BY pre_hanabi_answer.`id` DESC LIMIT %d,%d", array($page, $page + 10)) as $answer) {
+	pre_hanabi_answer.`status` = 1 ORDER BY pre_hanabi_answer.`id` DESC LIMIT %d, 10", array($page)) as $answer) {
             echo '<tr><td width="80%">' . str_replace(PHP_EOL, '<br />', $answer["content"]) . "</td><td>" . $answer["ip"] . "</td><td>" . $answer["answer_time"] . '</td><td>' . $answer["fuid"] . '</td></tr>';
         }
         ?>
