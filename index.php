@@ -59,8 +59,6 @@ function invite($id) {
   $update->bindParam(2, $id);
   $update->execute();
 
-  $pdo = null;
-
   return $invitecode;
   
 }
@@ -91,7 +89,7 @@ function generate_invite_code() {
 <?php if(!isset($_GET["action"])){ 
 $_SESSION["token"] = md5(uniqid(mt_rand(), true));
 ?>
-<h3>请在以下文本框中谈谈你游玩过的一部Galgame，内容可以是游戏剧情、原画、配音以及你游玩的感想等：</h3>（请以自己的话来谈谈感想，勿抄袭、洗稿、重复提交）
+<h3>请在以下文本框中谈谈你游玩过的一部Galgame，内容可以是游戏剧情、原画、配音以及你游玩的感想等：</h3>（请以自己的话来谈谈感想，<b>勿抄袭、洗稿、重复提交</b>，另外如果两天后仍然没有查到成绩，请考虑重答）
 <form action="?action=commit" method="post">
 <input type="hidden" name="token" value="<?php echo $_SESSION["token"]; ?>">
 <p><textarea rows="20" cols="100" name="answer"></textarea></p>
@@ -114,8 +112,10 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
                         }
                     }
                     $pdo = createpdo();
-                    $sql = "SELECT count(id) count from `pre_hanabi_answer` where ip = '".addslashes($_SERVER['HTTP_CF_CONNECTING_IP'])."'";
-                    if($pdo->query($sql)->fetch(PDO::FETCH_ASSOC)['count'] < 10){
+                    $sql = "SELECT count(id) count from `pre_hanabi_answer` where ip = ?";
+                    $select = $pdo->prepare($sql);
+                    $select->execute(array($_SERVER['HTTP_CF_CONNECTING_IP']));
+                    if($select->fetch(PDO::FETCH_ASSOC)['count'] < 10){
                         echo "提交成功！请过一段时间使用“".add($answer, $pmail)."”查看成绩与邀请码<br />注意：请妥善保存此Token。";
                     }else{
                         echo "该IP提交超出次数限制";
@@ -138,8 +138,10 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
             if(isset($_POST['token'])){
                 preg_match('/[a-f0-9]{32}/i', (string)$_POST['token'], $token);
                 if($token){
-                    $sql = "SELECT `id`, `status`, `invitecode` from `pre_hanabi_answer` where token = '".$token[0]."'";
-                    $result = $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
+                    $sql = "SELECT `id`, `status`, `invitecode` from `pre_hanabi_answer` where token = ?";
+                    $select = $pdo->prepare($sql);
+                    $select->execute(array($token[0]));
+                    $result = $select->fetch(PDO::FETCH_ASSOC);
                     if($result){
                         echo "当前状态：".array(0=>"投票中，请稍候再进行查询", 1=>"已通过", 2=>"未通过，请尝试重新回答")[$result["status"]];
                         if($result["status"] == 1) {
@@ -157,6 +159,8 @@ $_SESSION["token"] = md5(uniqid(mt_rand(), true));
                 }
             }
         break;
+        default:
+            echo "非法请求！";
     }
 } ?>
 
